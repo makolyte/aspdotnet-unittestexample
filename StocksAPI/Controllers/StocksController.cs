@@ -14,10 +14,10 @@ namespace StocksAPI.Controllers
             StocksRepository = stockRepository;
         }
 
-        [HttpGet]
+        [HttpGet("{symbol}")]
         public async Task<IActionResult> Get(string symbol)
         {
-            return Ok();
+            return Ok(symbol);
         }
     }
 }
