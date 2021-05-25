@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using StocksAPI.Data;
 using System.Threading.Tasks;
 
 namespace StocksAPI.Controllers
@@ -7,8 +8,10 @@ namespace StocksAPI.Controllers
     [Route("[controller]")]
     public class StocksController : ControllerBase
     {
-        public StocksController()
+        private readonly IStocksRepository StocksRepository;
+        public StocksController(IStocksRepository stockRepository)
         {
+            StocksRepository = stockRepository;
         }
 
         [HttpGet]

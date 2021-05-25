@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using StocksAPI.Data;
 
 namespace StocksAPI
 {
@@ -17,6 +18,7 @@ namespace StocksAPI
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IStocksRepository>(new StocksRepository());
             services.AddControllers();
         }
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
