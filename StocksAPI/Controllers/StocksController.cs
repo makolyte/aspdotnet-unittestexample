@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StocksAPI.Data;
+using StocksAPI.Models;
+using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace StocksAPI.Controllers
@@ -17,7 +20,23 @@ namespace StocksAPI.Controllers
         [HttpGet("{symbol}")]
         public async Task<IActionResult> Get(string symbol)
         {
-            return Ok(symbol);
+            try
+            {
+                var stock = await StocksRepository.Get(symbol, HttpContext.RequestAborted);
+                
+                if (stock is NullStock)
+                    return BadRequest($"{symbol} stock doesn't exist");
+
+                return Ok(stock);
+            }
+            catch(TaskCanceledException)
+            {
+                return BadRequest("User cancelled");
+            }
+            catch(Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, $"Error when looking up {symbol} stock: {ex.Message}");
+            }
         }
     }
 }
