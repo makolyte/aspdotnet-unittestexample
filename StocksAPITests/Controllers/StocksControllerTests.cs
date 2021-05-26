@@ -17,21 +17,34 @@ namespace StocksAPI.Controllers.Tests
     [TestClass()]
     public class StocksControllerTests
     {
-        [TestMethod()]
-        public async Task GetStockTest_WhenStockDoesntExist_ReturnsBadRequestError()
+        private StocksController Build(string symbol, Stock returns=null, Exception throws=null)
         {
-            //arrange
-            var symbol = "GMEEE";
             var cancelTokenSource = new CancellationTokenSource();
-            
+
             var mockRepo = new Mock<IStocksRepository>();
-            mockRepo.Setup(t => t.Get(symbol, cancelTokenSource.Token)).ReturnsAsync(new NullStock());
+
+            if (throws == null)
+            {
+                mockRepo.Setup(t => t.Get(symbol, cancelTokenSource.Token)).ReturnsAsync(returns);
+            }
+            else
+            {
+                mockRepo.Setup(t => t.Get(symbol, cancelTokenSource.Token)).ThrowsAsync(throws);
+            }
 
             var stocksController = new StocksController(mockRepo.Object);
             stocksController.ControllerContext.HttpContext = new DefaultHttpContext()
             {
                 RequestAborted = cancelTokenSource.Token
             };
+            return stocksController;
+        }
+        [TestMethod()]
+        public async Task GetStockTest_WhenStockDoesntExist_ReturnsBadRequestError()
+        {
+            //arrange
+            var symbol = "GMEEE";
+            var stocksController = Build(symbol, returns: new NullStock());
 
             //act
             var result = await stocksController.Get(symbol) as ObjectResult;
@@ -41,21 +54,13 @@ namespace StocksAPI.Controllers.Tests
             StringAssert.Contains(result.Value as string, symbol);
 
         }
+
         [TestMethod()]
         public async Task GetStockTest_WhenRequestCanceled_ReturnsBadRequestError()
         {
             //arrange
             var symbol = "GME";
-            var cancelTokenSource = new CancellationTokenSource();
-
-            var mockRepo = new Mock<IStocksRepository>();
-            mockRepo.Setup(t => t.Get(symbol, cancelTokenSource.Token)).ThrowsAsync(new TaskCanceledException());
-
-            var stocksController = new StocksController(mockRepo.Object);
-            stocksController.ControllerContext.HttpContext = new DefaultHttpContext()
-            {
-                RequestAborted = cancelTokenSource.Token
-            };
+            var stocksController = Build(symbol, throws: new TaskCanceledException());
 
             //act
             var result = await stocksController.Get(symbol) as ObjectResult;
@@ -70,16 +75,7 @@ namespace StocksAPI.Controllers.Tests
         {
             //arrange
             var symbol = "GME";
-            var cancelTokenSource = new CancellationTokenSource();
-
-            var mockRepo = new Mock<IStocksRepository>();
-            mockRepo.Setup(t => t.Get(symbol, cancelTokenSource.Token)).ThrowsAsync(new NotImplementedException());
-
-            var stocksController = new StocksController(mockRepo.Object);
-            stocksController.ControllerContext.HttpContext = new DefaultHttpContext()
-            {
-                RequestAborted = cancelTokenSource.Token
-            };
+            var stocksController = Build(symbol, throws: new NotImplementedException());
 
             //act
             var result = await stocksController.Get(symbol) as ObjectResult;
@@ -93,17 +89,15 @@ namespace StocksAPI.Controllers.Tests
         {
             //arrange
             var symbol = "GME";
-            var cancelTokenSource = new CancellationTokenSource();
-            var expectedStock = new Stock() { Name = "Gamestop", Symbol = "GME", Price = 180, QuoteTime = DateTimeOffset.Now };
-
-            var mockRepo = new Mock<IStocksRepository>();
-            mockRepo.Setup(t => t.Get(symbol, cancelTokenSource.Token)).ReturnsAsync(expectedStock);
-
-            var stocksController = new StocksController(mockRepo.Object);
-            stocksController.ControllerContext.HttpContext = new DefaultHttpContext()
-            {
-                RequestAborted = cancelTokenSource.Token
+            var expectedStock = new Stock() 
+            { 
+                Name = "Gamestonk", 
+                Symbol = symbol, 
+                Price = 10_000_000, 
+                QuoteTime = DateTimeOffset.Now 
             };
+            var stocksController = Build(symbol, returns: expectedStock);
+
 
             //act
             var result = await stocksController.Get(symbol) as ObjectResult;
